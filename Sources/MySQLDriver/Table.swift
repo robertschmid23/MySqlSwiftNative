@@ -25,12 +25,6 @@ public extension MySQL {
 		var table: TableModel.Type
         var con : Connection
 		
-		static let TINY:Int = 256 //2^8
-		static let REGULAR:Int = 65536 //2^16
-		static let MEDIUM:Int = 16777216 //2^24
-		static let LONG:Int = 4294967296 //2^32
-		
-
 		public init(tableName:String, connection:Connection) {
 			self.tableName = tableName
 			self.table = TableModel.self
@@ -97,10 +91,10 @@ public extension MySQL {
 					return "FLOAT" + optional
 				case "Double":
 					return "DOUBLE" + optional
-				case "TinyText", "Text", "MediumText", "LongText":
-					return type.uppercased() + optional
-				case "String", "VarChar":
-					return stringType(val as! String) + optional
+				case "TinyText", "Text", "MediumText", "LongText", "VarChar":
+					return columnDescriptor(type: type, val: val as? DBString) + optional
+				case "String":
+					return DBString.columnDescription(val as? String) + optional
 				case "__NSTaggedDate", "__NSDate", "NSDate", "Date":
 					return "DATETIME" + optional
 				case "NSConcreteData", "NSConcreteMutableData", "NSMutableData", "Data":
@@ -112,34 +106,15 @@ public extension MySQL {
 			}
 		}
 		
-		func stringType(_ val: String) -> String
+		func columnDescriptor(type: String, val: DBString?) -> String
 		{
-			var type = "MEDIUMTEXT"
-			if let maxLength = val.maxLength
-			{
-				switch maxLength
-				{
-					case Table.TINY:
-						type = "TINYTEXT"
-						break
-					case Table.REGULAR:
-						type = "TEXT"
-						break
-					case Table.MEDIUM:
-						type = "MEDIUMTEXT"
-						break
-					case Table.LONG:
-						type = "LONGTEXT"
-						break
-					default:
-						if maxLength < Table.REGULAR
-						{
-							type = "VARCHAR(\(maxLength))"
-						}
-				}
-			}
+			var colDesc = type.uppercased()
 			
-			return type
+			if let val = val, let max = val.maxLength, max > 0, colDesc == "VARCHAR"
+			{
+				colDesc.append("(\(max))")
+			}
+			return colDesc
 		}
 		
 		/// Creates a new table based on a Swift Object using the connection

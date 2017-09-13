@@ -103,6 +103,7 @@
 		3BC37B311C948A3F00C0B9E7 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC37ADD1C948A3E00C0B9E7 /* Utils.swift */; };
 		7D0D77481F5E61980078F04B /* TableModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0D77471F5E61980078F04B /* TableModel.swift */; };
 		7D85BC341F6371B800827612 /* MySwiftQL+String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D85BC331F6371B800827612 /* MySwiftQL+String.swift */; };
+		7DBA1CED1F69B5DA009994FB /* DBString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBA1CEC1F69B5DA009994FB /* DBString.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -191,6 +192,7 @@
 		3BC37ADD1C948A3E00C0B9E7 /* Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		7D0D77471F5E61980078F04B /* TableModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableModel.swift; sourceTree = "<group>"; };
 		7D85BC331F6371B800827612 /* MySwiftQL+String.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MySwiftQL+String.swift"; sourceTree = "<group>"; };
+		7DBA1CEC1F69B5DA009994FB /* DBString.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DBString.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -342,6 +344,7 @@
 				3BC37AD01C948A3E00C0B9E7 /* Connection.swift */,
 				3BC37AD11C948A3E00C0B9E7 /* ConnectionPool.swift */,
 				3BC37AD21C948A3E00C0B9E7 /* Constants.swift */,
+				7DBA1CEC1F69B5DA009994FB /* DBString.swift */,
 				3BC37AD31C948A3E00C0B9E7 /* main.swift */,
 				3BC37AD41C948A3E00C0B9E7 /* mysql.swift */,
 				3BC37AD51C948A3E00C0B9E7 /* Packets.swift */,
@@ -595,6 +598,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3BC37ADE1C948A3E00C0B9E7 /* Connection.swift in Sources */,
+				7DBA1CED1F69B5DA009994FB /* DBString.swift in Sources */,
 				3BC37B021C948A3F00C0B9E7 /* Query.swift in Sources */,
 				7D85BC341F6371B800827612 /* MySwiftQL+String.swift in Sources */,
 				3BC37B141C948A3F00C0B9E7 /* Socket.swift in Sources */,
