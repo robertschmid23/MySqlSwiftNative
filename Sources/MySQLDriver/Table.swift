@@ -22,109 +22,159 @@ public extension MySQL {
         }
         
         var tableName : String
+		var table: TableModel.Type
         var con : Connection
+		
+		static let TINY:Int = 256 //2^8
+		static let REGULAR:Int = 65536 //2^16
+		static let MEDIUM:Int = 16777216 //2^24
+		static let LONG:Int = 4294967296 //2^32
+		
+
+		public init(tableName:String, connection:Connection) {
+			self.tableName = tableName
+			self.table = TableModel.self
+			con = connection
+		}
+
+		public init(table:TableModel.Type, connection: MySQL.Connection)
+		{
+			self.table = table
+			self.tableName = String(describing: table)
+			con = connection
+		}
+		
         
-        public init(tableName:String, connection:Connection) {
-            self.tableName = tableName
-            con = connection
-        }
-        
-        
-        func mysqlType(_ val:Any) throws -> String {
-            
-            var optional = " NOT NULL"
-            var type = ""
-            let mi = Mirror(reflecting: val)
-            let s = "\(mi.subjectType)"
-            
-            #if os(Linux)
-                let range = s.bridge().rangeOfString("Optional<")
-                
-                if range.length != 0 {
-                    optional = ""
-                    let typePos = NSRange(location:range.length, length:s.bridge().length - range.length - 1)
-                    type = s.bridge().substringWithRange(typePos)
-                }
-                else {
-                    type = s
-                }
-            #else
-            
-                if let optPos = s.range(of: "Optional<") {
-                    optional = ""
-                    let typePos = optPos.upperBound..<s.index(before: s.endIndex)
-                    type = s.substring(with: typePos)
-                }
-                else {
-                    type = s
-                }
-            #endif
-            switch type {
-            case "Int8":
-                return "TINYINT" + optional
-            case "UInt8":
-                return "TINYINT UNSIGNED" + optional
-            case "Int16":
-                return "SMALLINT" + optional
-            case "UInt16":
-                return "SMALLINT UNSIGNED" + optional
-            case "Int":
-                return "INT" + optional
-            case "UInt":
-                return "INT UNSIGNED" + optional
-            case "Int64":
-                return "BIGINT" + optional
-            case "UInt64":
-                return "BIGINT UNSIGNED" + optional
-            case "Float":
-                return "FLOAT" + optional
-            case "Double":
-                return "DOUBLE" + optional
-            case "String":
-                return "MEDIUMTEXT" + optional
-            case "__NSTaggedDate", "__NSDate", "NSDate", "Date":
-                return "DATETIME" + optional
-            case "NSConcreteData", "NSConcreteMutableData", "NSMutableData", "Data":
-                return "LONGBLOB" + optional
-            case "Array<UInt8>":
-                return "LONGBLOB" + optional
-            default:
-                throw TableError.unknownType(type)
-            }
-        }
-        
-        
-        /// Creates a new table based on a Swift Object using the connection
-        func create(_ object:Any, primaryKey:String?=nil, autoInc:Bool=false) throws {
-            var v = ""
-            let mirror = Mirror(reflecting: object)
-            var count = mirror.children.count
-            
-            for case let (label?, value) in mirror.children {
-                var type = try mysqlType(value)
-                count -= 1
-                
-                if type != "" {
-                    if let pkey = primaryKey, pkey == label {
-                        type += " AUTO_INCREMENT"
-                    }
-                    
-                    v += label + " " + type
-                    if count > 0 {
-                        v += ","
-                    }
-                }
-            }
-            
-            if let pkey = primaryKey {
-                v += ",PRIMARY KEY (\(pkey))"
-            }
-            
-            let q = "create table \(tableName) (\(v))"
-            //print(q)
-            try con.exec(q)
-        }
-        
+		func mysqlType(_ val:Any) throws -> String
+		{
+			
+			var optional = " NOT NULL"
+			var type = ""
+			let mi = Mirror(reflecting: val)
+			let s = "\(mi.subjectType)"
+			
+			#if os(Linux)
+				let range = s.bridge().rangeOfString("Optional<")
+				
+				if range.length != 0 {
+					optional = ""
+					let typePos = NSRange(location:range.length, length:s.bridge().length - range.length - 1)
+					type = s.bridge().substringWithRange(typePos)
+				}
+				else {
+					type = s
+				}
+			#else
+				
+				if let optPos = s.range(of: "Optional<") {
+					optional = ""
+					let typePos = optPos.upperBound..<s.index(before: s.endIndex)
+					type = s.substring(with: typePos)
+				}
+				else {
+					type = s
+				}
+			#endif
+			switch type
+			{
+				case "Int8":
+					return "TINYINT" + optional
+				case "UInt8":
+					return "TINYINT UNSIGNED" + optional
+				case "Int16":
+					return "SMALLINT" + optional
+				case "UInt16":
+					return "SMALLINT UNSIGNED" + optional
+				case "Int":
+					return "INT" + optional
+				case "UInt":
+					return "INT UNSIGNED" + optional
+				case "Int64":
+					return "BIGINT" + optional
+				case "UInt64":
+					return "BIGINT UNSIGNED" + optional
+				case "Float":
+					return "FLOAT" + optional
+				case "Double":
+					return "DOUBLE" + optional
+				case "TinyText", "Text", "MediumText", "LongText":
+					return type.uppercased() + optional
+				case "String", "VarChar":
+					return stringType(val as! String) + optional
+				case "__NSTaggedDate", "__NSDate", "NSDate", "Date":
+					return "DATETIME" + optional
+				case "NSConcreteData", "NSConcreteMutableData", "NSMutableData", "Data":
+					return "LONGBLOB" + optional
+				case "Array<UInt8>":
+					return "LONGBLOB" + optional
+				default:
+					throw TableError.unknownType(type)
+			}
+		}
+		
+		func stringType(_ val: String) -> String
+		{
+			var type = "MEDIUMTEXT"
+			if let maxLength = val.maxLength
+			{
+				switch maxLength
+				{
+					case Table.TINY:
+						type = "TINYTEXT"
+						break
+					case Table.REGULAR:
+						type = "TEXT"
+						break
+					case Table.MEDIUM:
+						type = "MEDIUMTEXT"
+						break
+					case Table.LONG:
+						type = "LONGTEXT"
+						break
+					default:
+						if maxLength < Table.REGULAR
+						{
+							type = "VARCHAR(\(maxLength))"
+						}
+				}
+			}
+			
+			return type
+		}
+		
+		/// Creates a new table based on a Swift Object using the connection
+		open func create() throws
+		{
+			var v = ""
+			let t = self.table.init()
+			let mirror = Mirror(reflecting: t)
+			var count = mirror.children.count
+			
+			for case let (label?, value) in mirror.children {
+				var type = try mysqlType(value)
+				count -= 1
+				
+				if type != "" {
+					if let pkey = t.primaryKey, pkey == label {
+						type += " AUTO_INCREMENT"
+					}
+					
+					v += label + " " + type
+					if count > 0 {
+						v += ","
+					}
+				}
+			}
+			
+			if let pkey = t.primaryKey {
+				v += ",PRIMARY KEY (\(pkey))"
+			}
+			
+			let q = "create table `\(tableName)` (\(v))"
+			print(q)
+			try con.exec(q)
+		}
+		
         /// Creates a new table based on a MySQL.RowStructure using the connection
         func create(_ row:MySQL.Row, primaryKey:String?=nil, autoInc:Bool=false) throws {
             var v = ""
@@ -274,7 +324,7 @@ public extension MySQL {
         }
         
         open func update(_ row:Row, key:String, exclude:[String]? = nil) throws {
-            try update(row, Where: [key : row[key]], exclude: exclude)
+            try update(row, Where: [key : row[key] as Any], exclude: exclude)
         }
         
         open func update(_ object:Any, Where:[String:Any], exclude:[String]? = nil) throws {
@@ -440,6 +490,22 @@ public extension MySQL {
             let q = "drop table if exists " + tableName
             try con.exec(q)
         }
-        
+		
+		open func exists() -> Bool
+		{
+			let q = "SHOW tables like \"\(tableName)\""
+			var exists = false
+			do
+			{
+				let stmt = try con.prepare(q)
+				let stRes = try stmt.query([])
+				exists = try stRes.readAllRows()?.count == 1
+			}
+			catch
+			{
+				return false
+			}
+			return exists
+		}
     }
 }
