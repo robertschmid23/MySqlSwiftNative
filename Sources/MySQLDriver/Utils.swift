@@ -28,53 +28,8 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 extension MySQL {
     
-    internal struct Utils {
-        
-        static func mysqlType(_ val:Any) ->String {
-            
-            //var optional = false
-            //var value = val
-            
-            let m = Mirror(reflecting: val)
-            if m.displayStyle == .optional {
-              //  let desc = m.description
-             //   optional = true
-                //value = value!
-            }
-
-            
-            switch val {
-            case is Int8:
-                return "TINYINT"
-            case is UInt8:
-                return "TINYINT UNSIGNED"
-            case is Int16:
-                return "SMALLINT"
-            case is UInt16:
-                return "SMALLINT UNSIGNED"
-            case is Int:
-                return "INT"
-            case is UInt:
-                return "INT UNSIGNED"
-            case is Int64:
-                return "BIGINT"
-            case is UInt64:
-                return "BIGINT UNSIGNED"
-            case is Float:
-                return "FLOAT"
-            case is Double:
-                return "DOUBLE"
-            case is String:
-                return "MEDIUMTEXT"
-            case is Date:
-                return "DATETIME"
-            case is Data:
-                return "LONGBLOB"
-            default:
-                return ""
-            }
-        }
-
+    internal struct Utils
+	{
         fileprivate static func escapeData(_ data:[UInt8]) -> String {
             
             var res = [UInt8]()
@@ -280,9 +235,17 @@ extension MySQL {
                 
                 // 254: value of following 8
             case 0xfe:
-                return (UInt64(b[1]) | UInt64(b[2])<<8 | UInt64(b[3])<<16 |
-                    UInt64(b[4])<<24 | UInt64(b[5])<<32 | UInt64(b[6])<<40 |
-                    UInt64(b[7])<<48 | UInt64(b[8])<<56, 9)
+				let byteCount = b.count - 1
+				var val:UInt64 = 0
+				
+				for i in 1..<byteCount
+				{
+					let shift:UInt64 = UInt64(8^(i-1))
+					val = val | UInt64(b[i])<<shift
+					
+				}
+				//				Response is only 4 values
+				return (val, b.count)
             default: break
             }
             
